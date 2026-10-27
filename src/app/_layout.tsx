@@ -16,6 +16,53 @@ import {
 
 const sqliteOptions = { enableChangeListener: true };
 
+let webSQLiteLockAcquired: Promise<void> | null = null;
+let releaseWebSQLiteLock: (() => void) | null = null;
+
+function acquireWebSQLiteLock(): Promise<void> {
+  if (!webSQLiteLockAcquired) {
+    webSQLiteLockAcquired = new Promise<void>((resolve, reject) => {
+      if (!navigator.locks) {
+        reject(
+          new Error(
+            "Este navegador no permite coordinar el acceso a la base de datos. Usa un navegador actualizado y una sola pestaña.",
+          ),
+        );
+        return;
+      }
+
+      void navigator.locks
+        .request(
+          "mi-tienda-sqlite",
+          { mode: "exclusive", ifAvailable: true },
+          async (lock) => {
+            if (!lock) {
+              reject(
+                new Error(
+                  "La base de datos ya está abierta en otra pestaña. Ciérrala y vuelve a cargar la app.",
+                ),
+              );
+              return;
+            }
+
+            window.addEventListener(
+              "pagehide",
+              () => releaseWebSQLiteLock?.(),
+              { once: true },
+            );
+            resolve();
+            await new Promise<void>((release) => {
+              releaseWebSQLiteLock = release;
+            });
+          },
+        )
+        .catch(reject);
+    });
+  }
+
+  return webSQLiteLockAcquired;
+}
+
 function WebSQLiteLock({ children }: PropsWithChildren) {
   const [lockState, setLockState] = useState<"waiting" | "ready" | "error">(
     "waiting",
@@ -24,28 +71,10 @@ function WebSQLiteLock({ children }: PropsWithChildren) {
 
   useEffect(() => {
     let cancelled = false;
-    let releaseLock: (() => void) | undefined;
-    const holdLock = new Promise<void>((resolve) => {
-      releaseLock = resolve;
-    });
-
-    const lockRequest = navigator.locks
-      ? navigator.locks.request(
-          "mi-tienda-sqlite",
-          { mode: "exclusive" },
-          async () => {
-            if (cancelled) return;
-            setLockState("ready");
-            await holdLock;
-          },
-        )
-      : Promise.reject(
-          new Error(
-            "Este navegador no permite coordinar el acceso a la base de datos. Abre la app en una sola pestaña de un navegador actualizado.",
-          ),
-        );
-
-    void lockRequest
+    void acquireWebSQLiteLock()
+      .then(() => {
+        if (!cancelled) setLockState("ready");
+      })
       .catch((error: unknown) => {
         if (cancelled) return;
         setLockError(
@@ -58,7 +87,6 @@ function WebSQLiteLock({ children }: PropsWithChildren) {
 
     return () => {
       cancelled = true;
-      releaseLock?.();
     };
   }, []);
 
