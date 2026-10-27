@@ -14,6 +14,8 @@ import {
   View,
 } from "react-native";
 
+const sqliteOptions = { enableChangeListener: true };
+
 function Navigation() {
   const { loading, session } = useAuth();
 
@@ -86,6 +88,7 @@ export default function RootLayout() {
     >
       <SQLiteProvider
         databaseName="mi-tienda.db"
+        options={sqliteOptions}
         useSuspense={Platform.OS === "web"}
       >
         <DatabaseProvider>
