@@ -3,11 +3,11 @@ import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import { products } from "../../db/schema";
 import { useDatabase } from "@/db/DatabaseContext";
 
-export function useProducts() {
+export function useProducts(revision = 0) {
   const database = useDatabase();
   const result = useLiveQuery(
     database.select().from(products).orderBy(desc(products.name)),
-    [database],
+    [database, revision],
   );
 
   return {

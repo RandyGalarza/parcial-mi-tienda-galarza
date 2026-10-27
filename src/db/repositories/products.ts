@@ -73,7 +73,14 @@ export async function removeProduct(
   database: AppDatabase,
   productId: number,
 ): Promise<void> {
-  await database.delete(products).where(eq(products.id, productId)).run();
+  const result = await database
+    .delete(products)
+    .where(eq(products.id, productId))
+    .run();
+
+  if (result.changes !== 1) {
+    throw new Error("No se encontró el producto para eliminarlo.");
+  }
 }
 
 export async function getPendingProducts(

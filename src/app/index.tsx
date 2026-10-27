@@ -1,9 +1,7 @@
 import { useState } from "react";
 import {
-  Alert,
   FlatList,
   Pressable,
-  Platform,
   StyleSheet,
   Text,
   View,
@@ -25,10 +23,14 @@ const currency = new Intl.NumberFormat("es-CO", {
 export default function Index() {
   const database = useDatabase();
   const { session, signOut } = useAuth();
-  const { products: inventory, loading, error } = useProducts();
+  const [inventoryRevision, setInventoryRevision] = useState(0);
+  const { products: inventory, loading, error } = useProducts(inventoryRevision);
   const [syncing, setSyncing] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [deletingProductId, setDeletingProductId] = useState<number | null>(null);
+  const [confirmingProductId, setConfirmingProductId] = useState<number | null>(
+    null,
+  );
   const [message, setMessage] = useState<string | null>(null);
   const [screenError, setScreenError] = useState<string | null>(null);
 
@@ -66,6 +68,7 @@ export default function Index() {
 
     try {
       await removeProduct(database, productId);
+      setConfirmingProductId(null);
       setMessage("Producto eliminado.");
     } catch (deleteError: unknown) {
       setScreenError(
@@ -75,23 +78,13 @@ export default function Index() {
       );
     } finally {
       setDeletingProductId(null);
+      setInventoryRevision((revision) => revision + 1);
     }
   }
 
   function confirmDelete(productId: number, productName: string) {
-    if (Platform.OS === "web") {
-      void deleteProduct(productId);
-      return;
-    }
-
-    Alert.alert("Eliminar producto", `¿Quieres eliminar ${productName}?`, [
-      { text: "Cancelar", style: "cancel" },
-      {
-        text: "Eliminar",
-        style: "destructive",
-        onPress: () => void deleteProduct(productId),
-      },
-    ]);
+    setScreenError(null);
+    setConfirmingProductId(productId);
   }
 
   async function handleSignOut() {
@@ -238,84 +231,115 @@ export default function Index() {
           renderItem={({ item }) => {
             const pending = isProductPending(item);
             return (
-              <View style={styles.productCard}>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Editar ${item.name}`}
-                  onPress={() =>
-                    router.push({
-                      pathname: "/producto",
-                      params: { id: String(item.id) },
-                    })
-                  }
-                  style={styles.productInfo}
-                >
-                  <View
-                    style={[
-                      styles.productAvatar,
-                      pending ? styles.productAvatarPending : styles.productAvatarSynced,
-                    ]}
+              <View style={styles.productItem}>
+                <View style={styles.productCard}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Editar ${item.name}`}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/producto",
+                        params: { id: String(item.id) },
+                      })
+                    }
+                    style={styles.productInfo}
                   >
-                    <Text
+                    <View
+                      style={[
+                        styles.productAvatar,
+                        pending ? styles.productAvatarPending : styles.productAvatarSynced,
+                      ]}
+                    >
+                      <Text
                       style={[
                         styles.productAvatarText,
                         pending
                           ? styles.productAvatarPendingText
                           : styles.productAvatarSyncedText,
                       ]}
-                    >
-                      {item.name.trim().charAt(0).toUpperCase()}
-                    </Text>
-                  </View>
-                  <View style={styles.productText}>
-                    <Text style={styles.productName} numberOfLines={1}>
-                      {item.name}
-                    </Text>
-                    <Text style={styles.productDetail}>
-                      {item.quantity} unidades · {currency.format(item.price)} c/u
-                    </Text>
-                    <View
-                      style={[
-                        styles.statusPill,
-                        pending ? styles.statusPending : styles.statusSynced,
-                      ]}
-                    >
-                      <View
-                        style={[
-                          styles.statusDot,
-                          pending ? styles.statusPendingDot : styles.statusSyncedDot,
-                        ]}
-                      />
-                      <Text
-                        style={[
-                          styles.statusText,
-                          pending ? styles.statusPendingText : styles.statusSyncedText,
-                        ]}
                       >
-                        {pending ? "Pendiente" : "En la nube"}
+                        {item.name.trim().charAt(0).toUpperCase()}
                       </Text>
                     </View>
-                  </View>
-                </Pressable>
-                <View style={styles.productActions}>
-                  <View style={styles.valueTextWrap}>
-                    <Text style={styles.productValueLabel}>TOTAL</Text>
-                    <Text style={styles.productValue}>
-                      {currency.format(item.quantity * item.price)}
-                    </Text>
-                  </View>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`Eliminar ${item.name}`}
-                    onPress={() => confirmDelete(item.id, item.name)}
-                    disabled={deletingProductId === item.id}
-                    style={styles.deleteButton}
-                  >
-                    <Text style={styles.deleteText}>
-                      {deletingProductId === item.id ? "…" : "×"}
-                    </Text>
+                    <View style={styles.productText}>
+                      <Text style={styles.productName} numberOfLines={1}>
+                        {item.name}
+                      </Text>
+                      <Text style={styles.productDetail}>
+                        {item.quantity} unidades · {currency.format(item.price)} c/u
+                      </Text>
+                      <View
+                        style={[
+                          styles.statusPill,
+                          pending ? styles.statusPending : styles.statusSynced,
+                        ]}
+                      >
+                        <View
+                          style={[
+                            styles.statusDot,
+                            pending ? styles.statusPendingDot : styles.statusSyncedDot,
+                          ]}
+                        />
+                        <Text
+                          style={[
+                            styles.statusText,
+                            pending ? styles.statusPendingText : styles.statusSyncedText,
+                          ]}
+                        >
+                          {pending ? "Pendiente" : "En la nube"}
+                        </Text>
+                      </View>
+                    </View>
                   </Pressable>
+                  <View style={styles.productActions}>
+                    <View style={styles.valueTextWrap}>
+                      <Text style={styles.productValueLabel}>TOTAL</Text>
+                      <Text style={styles.productValue}>
+                        {currency.format(item.quantity * item.price)}
+                      </Text>
+                    </View>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Eliminar ${item.name}`}
+                      onPress={() => confirmDelete(item.id, item.name)}
+                      disabled={deletingProductId === item.id}
+                      style={styles.deleteButton}
+                    >
+                      <Text style={styles.deleteText}>
+                        {deletingProductId === item.id ? "…" : "×"}
+                      </Text>
+                    </Pressable>
+                  </View>
                 </View>
+                {confirmingProductId === item.id ? (
+                  <View style={styles.deleteConfirmation}>
+                    <Text style={styles.deleteConfirmationText}>
+                      ¿Eliminar {item.name}?
+                    </Text>
+                    <View style={styles.deleteConfirmationActions}>
+                      <Pressable
+                        accessibilityRole="button"
+                        onPress={() => setConfirmingProductId(null)}
+                        disabled={deletingProductId === item.id}
+                        style={styles.cancelDeleteButton}
+                      >
+                        <Text style={styles.cancelDeleteText}>Cancelar</Text>
+                      </Pressable>
+                      <Pressable
+                        accessibilityRole="button"
+                        onPress={() => void deleteProduct(item.id)}
+                        disabled={deletingProductId === item.id}
+                        style={styles.confirmDeleteButton}
+                      >
+                        <Text style={styles.confirmDeleteText}>
+                          {deletingProductId === item.id
+                            ? "Eliminando..."
+                            : "Sí, eliminar"}
+                        </Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                ) : null}
               </View>
             );
           }}
@@ -483,6 +507,7 @@ const styles = StyleSheet.create({
   productCountText: { color: colors.ink, fontSize: 12, fontWeight: "800" },
   listContent: { gap: 9, paddingBottom: 12 },
   productList: { flex: 1 },
+  productItem: { gap: 6 },
   productCard: {
     alignItems: "center",
     backgroundColor: colors.surface,
@@ -527,6 +552,27 @@ const styles = StyleSheet.create({
     width: 28,
   },
   deleteText: { color: colors.danger, fontSize: 21, fontWeight: "400", lineHeight: 23 },
+  deleteConfirmation: {
+    alignItems: "center",
+    backgroundColor: colors.dangerBackground,
+    borderRadius: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    minHeight: 44,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  deleteConfirmationText: { color: colors.danger, flexShrink: 1, fontSize: 12, fontWeight: "700" },
+  deleteConfirmationActions: { alignItems: "center", flexDirection: "row", gap: 8 },
+  cancelDeleteButton: { paddingHorizontal: 8, paddingVertical: 8 },
+  cancelDeleteText: { color: colors.muted, fontSize: 11, fontWeight: "700" },
+  confirmDeleteButton: {
+    backgroundColor: colors.danger,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  confirmDeleteText: { color: colors.white, fontSize: 11, fontWeight: "800" },
   emptyCard: {
     alignItems: "center",
     backgroundColor: colors.surface,
