@@ -71,44 +71,41 @@ sincronizado fuera del alcance.
 
 ## Capturas
 
-Guarda las capturas reales de tu dispositivo en `capturas/` con estos nombres.
-No se incluyen imágenes de muestra: tómales las capturas a tu propia ejecución y
-reemplaza cualquier sección pendiente antes de entregar.
+Capturas de la aplicación y de la tabla de productos en Supabase:
 
-### 01 — Inicio de sesión
+### 1. Inicio de sesión
 
-![Inicio de sesión](capturas/01-login.png)
+![Inicio de sesión](capturas/1.%20login.png)
 
-### 02 — Registro y validación visible
+### 2. Registro
 
-![Registro](capturas/02-registro.png)
+![Registro](capturas/2.%20registro.png)
 
-### 03 — Principal: tres productos, totales y estados
+### 3. Inventario principal
 
-![Inventario principal](capturas/03-principal.png)
+![Inventario principal](capturas/3.%20inicio.png)
 
-### 04 — Edición de un producto
+### 4. Edición de producto
 
-![Formulario de producto](capturas/04-formulario.png)
+![Edición de producto](capturas/4.%20editar.png)
 
-### 05 — Producto pendiente creado sin conexión
+### 5. Producto pendiente de sincronización
 
-![Producto sin conexión](capturas/05-sin-conexion.png)
+![Producto sin sincronizar](capturas/5.%20sin%20subir.png)
 
-### 06 — Resultado de una sincronización
+### 6. Inventario sincronizado
 
-![Inventario sincronizado](capturas/06-sincronizado.png)
+![Inventario sincronizado](capturas/6.%20todo%20sincronizado.png)
 
-### 07 — Filas en Supabase
+### 7. Productos en Supabase
 
-![Tabla products en Supabase](capturas/07-supabase.png)
+![Tabla products en Supabase](capturas/7.%20supa.png)
 
 ## Antes de entregar
 
 - Completa tu nombre y código en este README.
 - Comprueba el registro, la sesión persistente, el CRUD sin conexión y la
   sincronización con tu proyecto Supabase.
-- Añade las siete capturas reales a `capturas/`.
 - Confirma que `.env` no esté versionado y que `.env.example` sí esté incluido.
 - Sube el proyecto público al repositorio de GitHub que indique el curso y
   registra los commits requeridos por el docente.
