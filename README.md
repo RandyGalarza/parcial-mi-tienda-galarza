@@ -44,6 +44,8 @@ gestiona las cuentas y Supabase almacena la copia sincronizada.
    reinicia Metro después de cambiar su configuración. La app necesita los
    encabezados de aislamiento de origen que configura `metro.config.js`; el
    plugin de Expo Router también los aplica al alojamiento web compatible.
+   Mantén la app abierta en una sola pestaña del navegador: SQLite web usa un
+   handle exclusivo para el archivo y otra pestaña puede impedir que se abra.
 
 5. Si cambiaste `db/schema.ts`, genera una migración y reinicia Metro:
 
