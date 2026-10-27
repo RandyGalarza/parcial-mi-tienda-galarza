@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { Stack } from "expo-router";
 import { SQLiteProvider } from "expo-sqlite";
 import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
@@ -5,7 +6,13 @@ import migrations from "../../drizzle/migrations";
 import { AppScreen, Notice, colors } from "@/components/AppUI";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { DatabaseProvider, useDatabase } from "@/db/DatabaseContext";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Platform,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 function Navigation() {
   const { loading, session } = useAuth();
@@ -67,13 +74,27 @@ function DatabaseGate() {
 
 export default function RootLayout() {
   return (
-    <SQLiteProvider databaseName="mi-tienda.db">
-      <DatabaseProvider>
-        <AuthProvider>
-          <DatabaseGate />
-        </AuthProvider>
-      </DatabaseProvider>
-    </SQLiteProvider>
+    <Suspense
+      fallback={
+        <AppScreen>
+          <View style={styles.center}>
+            <ActivityIndicator color={colors.primary} size="large" />
+            <Text style={styles.loadingText}>Preparando inventario...</Text>
+          </View>
+        </AppScreen>
+      }
+    >
+      <SQLiteProvider
+        databaseName="mi-tienda.db"
+        useSuspense={Platform.OS === "web"}
+      >
+        <DatabaseProvider>
+          <AuthProvider>
+            <DatabaseGate />
+          </AuthProvider>
+        </DatabaseProvider>
+      </SQLiteProvider>
+    </Suspense>
   );
 }
 
