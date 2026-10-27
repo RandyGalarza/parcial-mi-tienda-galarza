@@ -3,6 +3,7 @@ import {
   Alert,
   FlatList,
   Pressable,
+  Platform,
   StyleSheet,
   Text,
   View,
@@ -58,21 +59,30 @@ export default function Index() {
   }
 
   function confirmDelete(productId: number, productName: string) {
+    const deleteProduct = () => {
+      setScreenError(null);
+      void removeProduct(database, productId).catch((deleteError: unknown) => {
+        setScreenError(
+          deleteError instanceof Error
+            ? deleteError.message
+            : "No fue posible eliminar el producto.",
+        );
+      });
+    };
+
+    if (Platform.OS === "web") {
+      if (globalThis.confirm(`¿Quieres eliminar ${productName}?`)) {
+        deleteProduct();
+      }
+      return;
+    }
+
     Alert.alert("Eliminar producto", `¿Quieres eliminar ${productName}?`, [
       { text: "Cancelar", style: "cancel" },
       {
         text: "Eliminar",
         style: "destructive",
-        onPress: () => {
-          setScreenError(null);
-          void removeProduct(database, productId).catch((deleteError: unknown) => {
-            setScreenError(
-              deleteError instanceof Error
-                ? deleteError.message
-                : "No fue posible eliminar el producto.",
-            );
-          });
-        },
+        onPress: deleteProduct,
       },
     ]);
   }
