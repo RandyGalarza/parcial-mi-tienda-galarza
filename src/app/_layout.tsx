@@ -8,7 +8,6 @@ import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { DatabaseProvider, useDatabase } from "@/db/DatabaseContext";
 import {
   ActivityIndicator,
-  Platform,
   StyleSheet,
   Text,
   View,
@@ -89,7 +88,7 @@ export default function RootLayout() {
       <SQLiteProvider
         databaseName="mi-tienda.db"
         options={sqliteOptions}
-        useSuspense={Platform.OS === "web"}
+        useSuspense
       >
         <DatabaseProvider>
           <AuthProvider>
