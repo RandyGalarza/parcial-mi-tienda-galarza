@@ -100,12 +100,3 @@ Capturas de la aplicación y de la tabla de productos en Supabase:
 ### 7. Productos en Supabase
 
 ![Tabla products en Supabase](capturas/7.%20supa.png)
-
-## Antes de entregar
-
-- Completa tu nombre y código en este README.
-- Comprueba el registro, la sesión persistente, el CRUD sin conexión y la
-  sincronización con tu proyecto Supabase.
-- Confirma que `.env` no esté versionado y que `.env.example` sí esté incluido.
-- Sube el proyecto público al repositorio de GitHub que indique el curso y
-  registra los commits requeridos por el docente.
