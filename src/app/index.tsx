@@ -28,6 +28,7 @@ export default function Index() {
   const { products: inventory, loading, error } = useProducts();
   const [syncing, setSyncing] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [deletingProductId, setDeletingProductId] = useState<number | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [screenError, setScreenError] = useState<string | null>(null);
 
@@ -58,22 +59,28 @@ export default function Index() {
     }
   }
 
-  function confirmDelete(productId: number, productName: string) {
-    const deleteProduct = () => {
-      setScreenError(null);
-      void removeProduct(database, productId).catch((deleteError: unknown) => {
-        setScreenError(
-          deleteError instanceof Error
-            ? deleteError.message
-            : "No fue posible eliminar el producto.",
-        );
-      });
-    };
+  async function deleteProduct(productId: number) {
+    setDeletingProductId(productId);
+    setScreenError(null);
+    setMessage(null);
 
+    try {
+      await removeProduct(database, productId);
+      setMessage("Producto eliminado.");
+    } catch (deleteError: unknown) {
+      setScreenError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "No fue posible eliminar el producto.",
+      );
+    } finally {
+      setDeletingProductId(null);
+    }
+  }
+
+  function confirmDelete(productId: number, productName: string) {
     if (Platform.OS === "web") {
-      if (globalThis.confirm(`¿Quieres eliminar ${productName}?`)) {
-        deleteProduct();
-      }
+      void deleteProduct(productId);
       return;
     }
 
@@ -82,7 +89,7 @@ export default function Index() {
       {
         text: "Eliminar",
         style: "destructive",
-        onPress: deleteProduct,
+        onPress: () => void deleteProduct(productId),
       },
     ]);
   }
@@ -301,9 +308,12 @@ export default function Index() {
                     accessibilityRole="button"
                     accessibilityLabel={`Eliminar ${item.name}`}
                     onPress={() => confirmDelete(item.id, item.name)}
+                    disabled={deletingProductId === item.id}
                     style={styles.deleteButton}
                   >
-                    <Text style={styles.deleteText}>×</Text>
+                    <Text style={styles.deleteText}>
+                      {deletingProductId === item.id ? "…" : "×"}
+                    </Text>
                   </Pressable>
                 </View>
               </View>
